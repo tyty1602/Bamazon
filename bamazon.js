@@ -2,6 +2,7 @@
 var inquirer = require("inquirer");
 var mysql = require("mysql");
 var Table = require('cli-table');
+var store_array = [];
 
 // instantiate
 var table = new Table({
@@ -31,7 +32,6 @@ connection.connect(function (err) {
     displayStock();
 });
 
-//Return specific Artist
 function displayStock() {
     connection.query('SELECT * FROM `products` WHERE `stock_quantity` > 0', function (error, res, fields) {
         //console.log(res)
@@ -45,6 +45,7 @@ function displayStock() {
             );
         });
         console.log(table.toString());
+        store_array.push(array1);
     });
 
 }
@@ -52,22 +53,95 @@ function displayStock() {
 //The app should then prompt users with two messages.
 
 
+// prompt for info about the item being put up for auction
 
-// The first should ask them the ID of the product they would like to buy.
-// The second message should ask how many units of the product they would like to buy.
+// 1. Yes or no would you like to purchase an item
+// 2. If no, end the conversation
+// 3. If yes, ask which item the buyer want and display the list of the items. 
+// 4. When buy select one, ask them how many they want to buy
+//5.  validate if item is in stock
+// 6. If not in stock, display sorry message
+//7. If in stock, display a confirm message with total price
 
+// function which prompts the user for what action they should take
+function start() {
+    inquirer
+        .prompt({
+            name: "buyOrNot",
+            type: "rawlist",
+            message: "Would you like to buy an item?",
+            choices: ["Yes", "No"]
+        })
+        .then(function (answer) {
+            // based on their answer, either call the bid or the post functions
+            if (answer.buyOrNot.toUpperCase() === "YES") {
+                buy();
+            }
+            else {
+                console.log("Thank you for checking out our store!");
+            }
+        });
+}
 
-
-// Once the customer has placed the order, your application should check if your store has enough of the product to meet the customer's request.
-
-
-
-// If not, the app should log a phrase like Insufficient quantity!, and then prevent the order from going through.
-
-
-
-// However, if your store does have enough of the product, you should fulfill the customer's order.
-
-
-// This means updating the SQL database to reflect the remaining quantity.
-// Once the update goes through, show the customer the total cost of their purchase.
+function buy() {
+    // query the database for all items being auctioned
+    connection.query("SELECT * FROM products", function (err, results) {
+        if (err) throw err;
+        // once you have the items, prompt the user for which they'd like to bid on
+        inquirer
+            .prompt([
+                {
+                    name: "choice",
+                    type: "rawlist",
+                    choices: function () {
+                        var choiceArray = [];
+                        for (var i = 0; i < results.length; i++) {
+                            choiceArray.push(results[i].item_name);
+                        }
+                        return choiceArray;
+                    },
+                    message: "What auction would you like to buy?"
+                },
+                {
+                    name: "buy",
+                    type: "input",
+                    message: "How many items would you like to buy?"
+                }
+            ])
+            .then(function(answer) {
+                // get the information of the chosen item
+                var chosenItem;
+                for (var i = 0; i < results.length; i++) {
+                  if (results[i].item_name === answer.choice) {
+                    chosenItem = results[i];
+                  }
+                }
+        
+                // determine if bid was high enough
+                if (chosenItem.highest_bid < parseInt(answer.bid)) {
+                  // bid was high enough, so update db, let the user know, and start over
+                  connection.query(
+                    "UPDATE auctions SET ? WHERE ?",
+                    [
+                      {
+                        highest_bid: answer.bid
+                      },
+                      {
+                        id: chosenItem.id
+                      }
+                    ],
+                    function(error) {
+                      if (error) throw err;
+                      console.log("Bid placed successfully!");
+                      start();
+                    }
+                  );
+                }
+                else {
+                  // bid wasn't high enough, so apologize and start over
+                  console.log("Your bid was too low. Try again...");
+                  start();
+                }
+              });
+          });
+        }

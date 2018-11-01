@@ -3,6 +3,7 @@ var inquirer = require("inquirer");
 var mysql = require("mysql");
 var Table = require('cli-table');
 var store_array = [];
+var quantity_array = [];
 
 // instantiate
 var table = new Table({
@@ -38,9 +39,6 @@ function displayStock() {
         //console.log(res)
         var array1 = res;
         array1.forEach(function (element) {
-            // console.log(element.Item_ID);
-            // console.log(element.product_name);
-            // console.log(element.price);
             table.push(
                 [element.Item_ID, element.product_name, element.price]
             );
@@ -102,51 +100,41 @@ function buy() {
 			message: 'How many do you need?'
 		}
 	]).then(function(input) {
-		// console.log('Customer has selected: \n    item_id = '  + input.item_id + '\n    quantity = ' + input.quantity);
-
-		var item = input.Item_ID;
-        var quantity = input.quantity;
-
+		var item = parseInt(input.item_id);
+        var quantity = parseInt(input.quantity);
+        //console.log('look at item', item);
 		// Query db to confirm that the given item ID exists in the desired quantity
 		//var queryStr = 'SELECT * FROM products WHERE ?';
 
-		connection.query('SELECT * FROM products', function(err, data) {
+		connection.query('SELECT * FROM products WHERE Item_ID = ?',[item],function(err, data) {
 			if (err) throw err;
-
-			// If the user has selected an invalid item ID, data attay will be empty
-
-			// if (data.length === 0) {
-			// 	console.log('ERROR: Invalid Item ID. Please select a valid Item ID.');
-
-            // } 
             else {
-                var pushNewItemToArray =  function () {
-                    var choice_array = [];
-                    for (var i = 0; i < data.length; i++) {
-                        choice_array.push(data[i].Item_ID);
-                    }
-                    return choice_array;
-                };
-                var choicesArray = pushNewItemToArray();
-                console.log(choicesArray);
-
-				// console.log('productData = ' + JSON.stringify(productData));
-				// console.log('productData.stock_quantity = ' + productData.stock_quantity);
-
+                console.log('data array is heeeeeer' , data);
+                // var pushNewItemToArray =  function () {
+                //     //var quantity_array = [];
+                //     for (var i = 0; i < data.length; i++) {
+                //         choice_array.push(data[i].Item_ID);
+                //         quantity_array.push(data[i].stock_quantity);
+                //     }
+                //     return choice_array;
+                // };
+                // var choicesArray = pushNewItemToArray();
+                // console.log(choicesArray);
+                // console.log(quantity_array);
 				// If the quantity requested by the user is in stock
-				if (parseInt(quantity) <= choicesArray.stock_quantity) {
-                    console.log(stock_quantity);
+				if (parseInt <= data.stock_quantity) {
+                    
 					console.log('Yay, the product you requested is in stock! Placing order!');
 
 					// Construct the updating query string
-					var updateQueryStr = 'UPDATE products SET stock_quantity = ' + (productData.stock_quantity - quantity) + ' WHERE Item_Id = ' + item;
+					var updateQueryStr = 'UPDATE products SET stock_quantity = ' + (data.stock_quantity - quantity) + ' WHERE Item_Id = ' + item;
 					// console.log('updateQueryStr = ' + updateQueryStr);
 
 					// Update the inventory
 					connection.query(updateQueryStr, function(err, data) {
 						if (err) throw err;
 
-						console.log('Your oder has been placed! Your total is $' + productData.price * quantity);
+						console.log('Your oder has been placed! Your total is $' + data.price * quantity);
 						console.log('Thank you for shopping with us!');
 						console.log("\n---------------------------------------------------------------------\n");
 

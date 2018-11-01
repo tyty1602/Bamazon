@@ -122,7 +122,7 @@ function buy() {
                 // console.log(choicesArray);
                 // console.log(quantity_array);
 				// If the quantity requested by the user is in stock
-				if (parseInt <= data.stock_quantity) {
+				if (quantity <= data.stock_quantity) {
                     
 					console.log('Yay, the product you requested is in stock! Placing order!');
 

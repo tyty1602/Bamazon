@@ -109,7 +109,12 @@ function buy() {
 		connection.query('SELECT * FROM products WHERE Item_ID = ?',[item],function(err, data) {
 			if (err) throw err;
             else {
-                console.log('data array is heeeeeer' , data);
+                let parseData = JSON.stringify(data)
+                let useThis = JSON.parse(parseData)
+                
+                console.log('data array is heeeeeer' , useThis);
+
+                console.log("hello here we are", useThis[0].stock_quantity)
                 // var pushNewItemToArray =  function () {
                 //     //var quantity_array = [];
                 //     for (var i = 0; i < data.length; i++) {
@@ -122,12 +127,12 @@ function buy() {
                 // console.log(choicesArray);
                 // console.log(quantity_array);
 				// If the quantity requested by the user is in stock
-				if (quantity <= data.stock_quantity) {
+				if (quantity <= useThis[0].stock_quantity) {
                     
 					console.log('Yay, the product you requested is in stock! Placing order!');
 
 					// Construct the updating query string
-					var updateQueryStr = 'UPDATE products SET stock_quantity = ' + (data.stock_quantity - quantity) + ' WHERE Item_Id = ' + item;
+					var updateQueryStr = 'UPDATE products SET stock_quantity = ' + (useThis[0].stock_quantity - quantity) + ' WHERE Item_Id = ' + item;
 					// console.log('updateQueryStr = ' + updateQueryStr);
 
 					// Update the inventory

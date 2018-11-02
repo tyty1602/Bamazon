@@ -11,8 +11,6 @@ var table = new Table({
     colWidths: [20, 50, 50]
 });
 
-
-
 var connection = mysql.createConnection({
     host: "localhost",
 
@@ -49,19 +47,6 @@ function displayStock() {
 
 }
 
-//The app should then prompt users with two messages.
-
-
-// prompt for info about the item being put up for auction
-
-// 1. Yes or no would you like to purchase an item
-// 2. If no, end the conversation
-// 3. If yes, ask which item the buyer want and display the list of the items. 
-// 4. When buy select one, ask them how many they want to buy
-//5.  validate if item is in stock
-// 6. If not in stock, display sorry message
-//7. If in stock, display a confirm message with total price
-
 // function which prompts the user for what action they should take
 function start() {
     inquirer
@@ -85,7 +70,6 @@ function start() {
 }
 
 function buy() {
-	// console.log('___ENTER promptUserPurchase___');
 
 	// Prompt the user to select an item
 	inquirer.prompt([
@@ -102,9 +86,6 @@ function buy() {
 	]).then(function(input) {
 		var item = parseInt(input.item_id);
         var quantity = parseInt(input.quantity);
-        //console.log('look at item', item);
-		// Query db to confirm that the given item ID exists in the desired quantity
-		//var queryStr = 'SELECT * FROM products WHERE ?';
 
 		connection.query('SELECT * FROM products WHERE Item_ID = ?',[item],function(err, data) {
 			if (err) throw err;
@@ -112,20 +93,8 @@ function buy() {
                 let parseData = JSON.stringify(data)
                 let useThis = JSON.parse(parseData)
                 
-                console.log('data array is heeeeeer' , useThis);
-
-                console.log("hello here we are", useThis[0].stock_quantity)
-                // var pushNewItemToArray =  function () {
-                //     //var quantity_array = [];
-                //     for (var i = 0; i < data.length; i++) {
-                //         choice_array.push(data[i].Item_ID);
-                //         quantity_array.push(data[i].stock_quantity);
-                //     }
-                //     return choice_array;
-                // };
-                // var choicesArray = pushNewItemToArray();
-                // console.log(choicesArray);
-                // console.log(quantity_array);
+                //console.log('data array is heeeeeer' , useThis);
+                //console.log("hello here we are", useThis[0].stock_quantity)
 				// If the quantity requested by the user is in stock
 				if (quantity <= useThis[0].stock_quantity) {
                     
@@ -133,13 +102,21 @@ function buy() {
 
 					// Construct the updating query string
 					var updateQueryStr = 'UPDATE products SET stock_quantity = ' + (useThis[0].stock_quantity - quantity) + ' WHERE Item_Id = ' + item;
-					// console.log('updateQueryStr = ' + updateQueryStr);
 
 					// Update the inventory
 					connection.query(updateQueryStr, function(err, data) {
-						if (err) throw err;
+                        //console.log("stock quantity has been updated");
+                        if (err) throw err;
 
-						console.log('Your oder has been placed! Your total is $' + data.price * quantity);
+                    })
+                    connection.query('SELECT * FROM products WHERE Item_ID = ?',[item],function(err, data2) {
+                        //console.log("this is data price final", data2);
+                        let parsedata = JSON.stringify(data2);
+                        let finalParsed = JSON.parse(parsedata);
+                        if (err) throw err;
+                       
+
+						console.log('Your oder has been placed! Your total is $' + finalParsed[0].price * quantity);
 						console.log('Thank you for shopping with us!');
 						console.log("\n---------------------------------------------------------------------\n");
 
@@ -150,9 +127,23 @@ function buy() {
 					console.log('Sorry, we do not have enough.');
 					console.log('Please modify your order.');
 					console.log("\n---------------------------------------------------------------------\n");
-					// displayStock();
+					connection.end();
 				}
 			}
 		})
 	})
 }
+
+//Algorithm
+//The app should then prompt users with two messages.
+
+
+// prompt for info about the item being put up for auction
+
+// 1. Yes or no would you like to purchase an item
+// 2. If no, end the conversation
+// 3. If yes, ask which item the buyer want and display the list of the items. 
+// 4. When buy select one, ask them how many they want to buy
+//5.  validate if item is in stock
+// 6. If not in stock, display sorry message
+//7. If in stock, display a confirm message with total price
